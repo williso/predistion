@@ -45,38 +45,26 @@ else:
     filtered_df = df[(df['Niche'] == selected_niche) & (df['Product Type'] == selected_product_type)]
 
 # ------------------------------------------
-# 4. Tổng hợp tổ hợp thiết kế
+
+# 4. Hiển thị tổ hợp thiết kế có highlight
 # ------------------------------------------
-group_cols = [
-    'Layout ( Text and Image)', 'Number of Colors', 'Trend Quote',
-    'Recipient/Sender in the Message', 'Color', 'Message Content',
-    'Style Design', 'Tone Design', 'Motif Design'
-]
 
-summary_df = (
-    filtered_df
-    .groupby(group_cols)
-    .agg(
-        Avg_CR=('7 Day Conversion Rate', 'mean'),
-        Count=('ASIN', 'count')
-    )
-    .reset_index()
-    .sort_values(by='Avg_CR', ascending=False)
-)
+# Tính trung bình toàn bộ tổ hợp
+avg_of_all = summary_df['Avg_CR'].mean()
 
-# Tính CR trung bình toàn bộ tổ hợp
-avg_cr_all = summary_df["Avg_CR"].mean()
+# Hàm để tô đậm dòng có Avg_CR > trung bình
+def highlight_full_row(row):
+    if row['Avg_CR'] > avg_of_all:
+        return ['color: #bbdebf; font-weight: bold' for _ in row]
+    else:
+        return ['' for _ in row]
 
-# Tô màu nếu Avg_CR > trung bình
-def highlight_above_average(val):
-    return 'background-color: #d4edda' if val > avg_cr_all else ''
+# Áp dụng style
+styled_df = summary_df.style.apply(highlight_full_row, axis=1)
 
-styled_df = summary_df.style.applymap(highlight_above_average, subset=["Avg_CR"])
-
-# Hiển thị bảng tổng hợp tổ hợp
+# Hiển thị bảng có styling
 st.subheader("📈 Tổng hợp tất cả tổ hợp thiết kế")
 st.dataframe(styled_df, use_container_width=True, hide_index=True)
-
 # ------------------------------------------
 # 5. Phân loại CR và hiển thị ảnh theo nhóm
 # ------------------------------------------
