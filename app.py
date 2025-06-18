@@ -7,18 +7,14 @@ import pandas as pd
 @st.cache_data
 def load_data():
     df = pd.read_csv("Merged_ASIN_Data.csv", encoding='Windows-1252')
-    
-    # Đổi tên cột để thống nhất
     df.rename(columns={'Conversion Rate (%)': '7 Day Conversion Rate'}, inplace=True)
-    
-    # Chọn các cột cần thiết
+
     df = df[[
         'ASIN', 'Niche', 'Product Type', 'Layout ( Text and Image)', 'Number of Colors', 'Trend Quote',
         'Recipient/Sender in the Message', 'Color', 'Message Content', 'Style Design',
         'Tone Design', 'Motif Design', '7 Day Conversion Rate', 'Image_URL'
     ]].dropna(subset=['ASIN', 'Image_URL'])
 
-    # Xử lý kiểu dữ liệu
     df['7 Day Conversion Rate'] = pd.to_numeric(df['7 Day Conversion Rate'], errors='coerce')
     df.dropna(subset=['7 Day Conversion Rate'], inplace=True)
 
@@ -84,16 +80,19 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR trong t�
         condition &= (filtered_df[col] == selected_combo_row[col])
     asin_df = filtered_df[condition].copy()
 
-    # Tính phân vị cho CR
-    q33 = asin_df['7 Day Conversion Rate'].quantile(0.33)
-    q66 = asin_df['7 Day Conversion Rate'].quantile(0.66)
+    # Tính trung bình
+    mean_cr = asin_df['7 Day Conversion Rate'].mean()
 
-    # Phân nhóm
-    asin_df['CR Group'] = pd.cut(
-        asin_df['7 Day Conversion Rate'],
-        bins=[-float('inf'), q33, q66, float('inf')],
-        labels=['Dưới trung bình', 'Trung bình', 'Top']
-    )
+    # Gán nhóm CR
+    def categorize_cr(cr, mean):
+        if cr > mean:
+            return 'Trên trung bình'
+        elif cr < mean:
+            return 'Dưới trung bình'
+        else:
+            return 'Trung bình'
+
+    asin_df['CR Group'] = asin_df['7 Day Conversion Rate'].apply(lambda x: categorize_cr(x, mean_cr))
 
     # --------------------------
     # Hàm hiển thị hình ảnh lưới
@@ -111,9 +110,9 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR trong t�
                 if i + j < len(image_urls):
                     with col:
                         st.image(image_urls[i + j], width=150)
-                        st.caption(asins[i + j])  # Hiển thị ASIN dưới ảnh
+                        st.caption(asins[i + j])
 
     # Hiển thị từng nhóm
-    show_images_by_group(asin_df, 'Top', '🟢')
+    show_images_by_group(asin_df, 'Trên trung bình', '🟢')
     show_images_by_group(asin_df, 'Trung bình', '🟡')
     show_images_by_group(asin_df, 'Dưới trung bình', '🔴')
