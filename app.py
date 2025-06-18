@@ -28,16 +28,21 @@ st.title("📊 Tổng hợp tổ hợp thiết kế theo ASIN và CR")
 df = load_data()
 
 # ---------------------------------------
-# 3. Chọn Niche và Product Type phù hợp
+# 3. Chọn Niche và Product Type (optional)
 # ---------------------------------------
 selected_niche = st.selectbox("🔍 Chọn Niche", sorted(df['Niche'].unique()))
-filtered_product_types = df[df['Niche'] == selected_niche]['Product Type'].unique()
-selected_product_type = st.selectbox("📦 Chọn Product Type", sorted(filtered_product_types))
 
-# Lọc theo Niche và Product Type
-filtered_df = df[(df['Niche'] == selected_niche) & (df['Product Type'] == selected_product_type)]
+# Lấy danh sách Product Type tương ứng với Niche
+filtered_product_types = df[df['Niche'] == selected_niche]['Product Type'].dropna().unique()
+product_type_options = ["-- Tất cả --"] + sorted(filtered_product_types.tolist())
+selected_product_type = st.selectbox("📦 Chọn Product Type (tuỳ chọn)", product_type_options)
 
-# ------------------------------------------
+# Lọc theo Niche và (nếu có) Product Type
+if selected_product_type == "-- Tất cả --":
+    filtered_df = df[df['Niche'] == selected_niche]
+else:
+    filtered_df = df[(df['Niche'] == selected_niche) & (df['Product Type'] == selected_product_type)]
+
 # 4. Tổng hợp tổ hợp thiết kế
 # ------------------------------------------
 group_cols = [
