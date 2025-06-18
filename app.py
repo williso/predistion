@@ -21,7 +21,7 @@ def load_data():
 def train_model(df):
     X_cat = df.drop(columns='7 Day Conversion Rate')
     y = df['7 Day Conversion Rate']
-    encoder = OneHotEncoder(sparse=False, handle_unknown='ignore')
+    encoder = OneHotEncoder(sparse_output=False, handle_unknown='ignore')
     X_encoded = encoder.fit_transform(X_cat)
     model = RandomForestRegressor(random_state=42)
     model.fit(X_encoded, y)
