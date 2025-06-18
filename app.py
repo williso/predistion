@@ -15,59 +15,25 @@ def load_data():
     return df
 
 # Streamlit app
-st.title("🎯 Top Design Combos by Conversion Rate")
+st.title("📊 Thiết kế & ASIN theo tỷ lệ chuyển đổi")
 
 df = load_data()
 
-selected_niche = st.selectbox("Select Niche", sorted(df['Niche'].unique()))
+selected_niche = st.selectbox("Chọn Niche", sorted(df['Niche'].unique()))
 filtered_product_types = df[df['Niche'] == selected_niche]['Product Type'].unique()
-selected_product_type = st.selectbox("Select Product Type", sorted(filtered_product_types))
+selected_product_type = st.selectbox("Chọn Product Type", sorted(filtered_product_types))
 
 filtered_df = df[(df['Niche'] == selected_niche) & (df['Product Type'] == selected_product_type)]
 
 if filtered_df.empty:
     st.warning("Không có dữ liệu cho tổ hợp Niche và Product Type này.")
 else:
-    group_cols = [
+    display_cols = [
+        'ASIN', '7 Day Conversion Rate',
         'Layout ( Text and Image)', 'Number of Colors', 'Trend Quote',
         'Recipient/Sender in the Message', 'Color', 'Message Content',
         'Style Design', 'Tone Design', 'Motif Design'
     ]
-    summary = filtered_df.groupby(group_cols).agg(
-        Avg_Conversion_Rate=('7 Day Conversion Rate', 'mean'),
-        Count=('7 Day Conversion Rate', 'count')
-    ).reset_index().sort_values(by='Avg_Conversion_Rate', ascending=False)
 
-    st.subheader("📈 Tổ hợp thiết kế có tỷ lệ chuyển đổi cao nhất")
-
-    for _, row in summary.iterrows():  # Hiển thị toàn bộ tổ hợp nếu bạn muốn, hoặc dùng .head(10) để rút gọn
-        combo_filter = (
-            (filtered_df['Layout ( Text and Image)'] == row['Layout ( Text and Image)']) &
-            (filtered_df['Number of Colors'] == row['Number of Colors']) &
-            (filtered_df['Trend Quote'] == row['Trend Quote']) &
-            (filtered_df['Recipient/Sender in the Message'] == row['Recipient/Sender in the Message']) &
-            (filtered_df['Color'] == row['Color']) &
-            (filtered_df['Message Content'] == row['Message Content']) &
-            (filtered_df['Style Design'] == row['Style Design']) &
-            (filtered_df['Tone Design'] == row['Tone Design']) &
-            (filtered_df['Motif Design'] == row['Motif Design'])
-        )
-        asin_subset = filtered_df[combo_filter]
-        title_text = f"👉 CR: {row['Avg_Conversion_Rate']:.2%} | Count: {row['Count']}"
-
-        with st.expander(title_text):
-            st.markdown("**🎨 Yếu tố thiết kế của tổ hợp này:**")
-            st.markdown(f"""
-            - **Layout:** {row['Layout ( Text and Image)']}
-            - **Number of Colors:** {row['Number of Colors']}
-            - **Trend Quote:** {row['Trend Quote']}
-            - **Recipient/Sender:** {row['Recipient/Sender in the Message']}
-            - **Color:** {row['Color']}
-            - **Message Content:** {row['Message Content']}
-            - **Style Design:** {row['Style Design']}
-            - **Tone Design:** {row['Tone Design']}
-            - **Motif Design:** {row['Motif Design']}
-            """)
-
-            st.markdown("**📦 ASIN và CR tương ứng:**")
-            st.dataframe(asin_subset[['ASIN', '7 Day Conversion Rate']].sort_values(by='7 Day Conversion Rate', ascending=False))
+    result_df = filtered_df[display_cols].sort_values(by='7 Day Conversion Rate', ascending=False).reset_index(drop=True)
+    st.dataframe(result_df, use_container_width=True)
