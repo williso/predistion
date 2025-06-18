@@ -6,14 +6,22 @@ import pandas as pd
 # -------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("Merged_ASIN_Data.csv")
+    df = pd.read_csv("Merged_ASIN_Data.csv", encoding='Windows-1252')
+    
+    # Đổi tên cột để thống nhất
+    df.rename(columns={'Conversion Rate (%)': '7 Day Conversion Rate'}, inplace=True)
+    
+    # Chọn các cột cần thiết
     df = df[[
         'ASIN', 'Niche', 'Product Type', 'Layout ( Text and Image)', 'Number of Colors', 'Trend Quote',
         'Recipient/Sender in the Message', 'Color', 'Message Content', 'Style Design',
         'Tone Design', 'Motif Design', '7 Day Conversion Rate', 'Image_URL'
     ]].dropna(subset=['ASIN', 'Image_URL'])
+
+    # Xử lý kiểu dữ liệu
     df['7 Day Conversion Rate'] = pd.to_numeric(df['7 Day Conversion Rate'], errors='coerce')
     df.dropna(subset=['7 Day Conversion Rate'], inplace=True)
+
     return df
 
 # ------------------------
