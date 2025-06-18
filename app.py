@@ -24,6 +24,7 @@ def load_data():
 # 2. Giao diện Streamlit
 # ------------------------
 st.title("📊 Tổng hợp tổ hợp thiết kế theo ASIN và CR")
+st.caption("Lọc theo Niche bắt buộc — Product Type có thể bỏ trống để hiển thị tất cả")
 
 df = load_data()
 
@@ -32,17 +33,18 @@ df = load_data()
 # ---------------------------------------
 selected_niche = st.selectbox("🔍 Chọn Niche", sorted(df['Niche'].unique()))
 
-# Lấy danh sách Product Type tương ứng với Niche
+# Danh sách Product Type theo Niche
 filtered_product_types = df[df['Niche'] == selected_niche]['Product Type'].dropna().unique()
 product_type_options = ["-- Tất cả --"] + sorted(filtered_product_types.tolist())
 selected_product_type = st.selectbox("📦 Chọn Product Type (tuỳ chọn)", product_type_options)
 
-# Lọc theo Niche và (nếu có) Product Type
+# Lọc theo lựa chọn
 if selected_product_type == "-- Tất cả --":
     filtered_df = df[df['Niche'] == selected_niche]
 else:
     filtered_df = df[(df['Niche'] == selected_niche) & (df['Product Type'] == selected_product_type)]
 
+# ------------------------------------------
 # 4. Tổng hợp tổ hợp thiết kế
 # ------------------------------------------
 group_cols = [
@@ -62,12 +64,21 @@ summary_df = (
     .sort_values(by='Avg_CR', ascending=False)
 )
 
+# Tính CR trung bình toàn bộ tổ hợp
+avg_cr_all = summary_df["Avg_CR"].mean()
+
+# Tô màu nếu Avg_CR > trung bình
+def highlight_above_average(val):
+    return 'background-color: #d4edda' if val > avg_cr_all else ''
+
+styled_df = summary_df.style.applymap(highlight_above_average, subset=["Avg_CR"])
+
 # Hiển thị bảng tổng hợp tổ hợp
 st.subheader("📈 Tổng hợp tất cả tổ hợp thiết kế")
-st.dataframe(summary_df, use_container_width=True, hide_index=True)
+st.dataframe(styled_df, use_container_width=True, hide_index=True)
 
 # ------------------------------------------
-# 5. Chia ASIN theo nhóm CR và hiển thị ảnh
+# 5. Phân loại CR và hiển thị ảnh theo nhóm
 # ------------------------------------------
 with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR trong tổ hợp đã chọn"):
     st.markdown("### 🧩 Chọn một tổ hợp:")
@@ -85,10 +96,10 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR trong t�
         condition &= (filtered_df[col] == selected_combo_row[col])
     asin_df = filtered_df[condition].copy()
 
-    # Tính trung bình
+    # Tính CR trung bình trong tổ hợp
     mean_cr = asin_df['7 Day Conversion Rate'].mean()
 
-    # Gán nhóm CR
+    # Gán nhãn nhóm CR
     def categorize_cr(cr, mean):
         if cr > mean:
             return 'Trên trung bình'
@@ -100,7 +111,7 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR trong t�
     asin_df['CR Group'] = asin_df['7 Day Conversion Rate'].apply(lambda x: categorize_cr(x, mean_cr))
 
     # --------------------------
-    # Hàm hiển thị hình ảnh lưới
+    # Hiển thị ảnh theo nhóm CR
     # --------------------------
     def show_images_by_group(df, group_label, color_emoji, images_per_row=4):
         st.markdown(f"#### {color_emoji} Nhóm {group_label}")
@@ -117,7 +128,6 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR trong t�
                         st.image(image_urls[i + j], width=150)
                         st.caption(asins[i + j])
 
-    # Hiển thị từng nhóm
     show_images_by_group(asin_df, 'Trên trung bình', '🟢')
     show_images_by_group(asin_df, 'Trung bình', '🟡')
     show_images_by_group(asin_df, 'Dưới trung bình', '🔴')
