@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 
 # Load and preprocess data
 @st.cache_data
@@ -16,7 +15,7 @@ def load_data():
     return df
 
 # Streamlit app
-st.title("📊 Design Combination Conversion Stats")
+st.title("🎯 Top Design Combos by Conversion Rate")
 
 df = load_data()
 
@@ -40,8 +39,8 @@ else:
     ).reset_index().sort_values(by='Avg_Conversion_Rate', ascending=False)
 
     st.subheader("📈 Tổ hợp thiết kế có tỷ lệ chuyển đổi cao nhất")
-    
-    for idx, row in summary.iterrows():
+
+    for _, row in summary.head(10).iterrows():  # Chỉ lấy top 10 để không quá dài
         combo_filter = (
             (filtered_df['Layout ( Text and Image)'] == row['Layout ( Text and Image)']) &
             (filtered_df['Number of Colors'] == row['Number of Colors']) &
@@ -56,25 +55,4 @@ else:
         asin_subset = filtered_df[combo_filter]
         title_text = f"👉 {row['Style Design']} | {row['Color']} | {row['Tone Design']} | CR: {row['Avg_Conversion_Rate']:.2%} | Count: {row['Count']}"
         with st.expander(title_text):
-            display_cols = ['ASIN', '7 Day Conversion Rate'] if 'ASIN' in asin_subset.columns else ['7 Day Conversion Rate']
-            st.dataframe(asin_subset[display_cols])
-
-    st.subheader("🔝 Top 10 tổ hợp có CR cao nhất")
-    top10 = summary.head(10).copy()
-    top10['Design Combo'] = top10['Style Design'] + ' | ' + top10['Color'] + ' | ' + top10['Tone Design']
-    fig_top = px.bar(top10, x='Design Combo', y='Avg_Conversion_Rate', title='Top 10 Design Combos')
-    st.plotly_chart(fig_top)
-
-    st.subheader("🔻 Bottom 10 tổ hợp có CR thấp nhất")
-    bottom10 = summary.tail(10).copy()
-    bottom10['Design Combo'] = bottom10['Style Design'] + ' | ' + bottom10['Color'] + ' | ' + bottom10['Tone Design']
-    fig_bottom = px.bar(bottom10, x='Design Combo', y='Avg_Conversion_Rate', title='Bottom 10 Design Combos')
-    st.plotly_chart(fig_bottom)
-
-    st.subheader("📊 Phân bố CR theo từng yếu tố")
-    selected_factor = st.selectbox(
-        "Chọn yếu tố để phân tích",
-        group_cols
-    )
-    fig_box = px.box(filtered_df, x=selected_factor, y='7 Day Conversion Rate', points='all', title=f'CR theo {selected_factor}')
-    st.plotly_chart(fig_box)
+            st.dataframe(asin_subset[['ASIN', '7 Day Conversion Rate']])
