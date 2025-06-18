@@ -40,7 +40,7 @@ else:
 
     st.subheader("📈 Tổ hợp thiết kế có tỷ lệ chuyển đổi cao nhất")
 
-    for _, row in summary.head(10).iterrows():  # Chỉ lấy top 10 để không quá dài
+    for _, row in summary.iterrows():  # Hiển thị toàn bộ tổ hợp nếu bạn muốn, hoặc dùng .head(10) để rút gọn
         combo_filter = (
             (filtered_df['Layout ( Text and Image)'] == row['Layout ( Text and Image)']) &
             (filtered_df['Number of Colors'] == row['Number of Colors']) &
@@ -53,6 +53,21 @@ else:
             (filtered_df['Motif Design'] == row['Motif Design'])
         )
         asin_subset = filtered_df[combo_filter]
-        title_text = f"👉 {row['Style Design']} | {row['Color']} | {row['Tone Design']} | CR: {row['Avg_Conversion_Rate']:.2%} | Count: {row['Count']}"
+        title_text = f"👉 CR: {row['Avg_Conversion_Rate']:.2%} | Count: {row['Count']}"
+
         with st.expander(title_text):
-            st.dataframe(asin_subset[['ASIN', '7 Day Conversion Rate']])
+            st.markdown("**🎨 Yếu tố thiết kế của tổ hợp này:**")
+            st.markdown(f"""
+            - **Layout:** {row['Layout ( Text and Image)']}
+            - **Number of Colors:** {row['Number of Colors']}
+            - **Trend Quote:** {row['Trend Quote']}
+            - **Recipient/Sender:** {row['Recipient/Sender in the Message']}
+            - **Color:** {row['Color']}
+            - **Message Content:** {row['Message Content']}
+            - **Style Design:** {row['Style Design']}
+            - **Tone Design:** {row['Tone Design']}
+            - **Motif Design:** {row['Motif Design']}
+            """)
+
+            st.markdown("**📦 ASIN và CR tương ứng:**")
+            st.dataframe(asin_subset[['ASIN', '7 Day Conversion Rate']].sort_values(by='7 Day Conversion Rate', ascending=False))
