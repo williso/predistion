@@ -15,7 +15,7 @@ def load_data():
     return df
 
 # Streamlit app
-st.title("📊 Thiết kế & ASIN theo tỷ lệ chuyển đổi")
+st.title("📊 Tổng hợp tổ hợp thiết kế theo ASIN và CR")
 
 df = load_data()
 
@@ -28,12 +28,23 @@ filtered_df = df[(df['Niche'] == selected_niche) & (df['Product Type'] == select
 if filtered_df.empty:
     st.warning("Không có dữ liệu cho tổ hợp Niche và Product Type này.")
 else:
-    display_cols = [
-        'ASIN', '7 Day Conversion Rate',
+    group_cols = [
         'Layout ( Text and Image)', 'Number of Colors', 'Trend Quote',
         'Recipient/Sender in the Message', 'Color', 'Message Content',
         'Style Design', 'Tone Design', 'Motif Design'
     ]
 
-    result_df = filtered_df[display_cols].sort_values(by='7 Day Conversion Rate', ascending=False).reset_index(drop=True)
-    st.dataframe(result_df, use_container_width=True)
+    summary_df = (
+        filtered_df
+        .groupby(group_cols)
+        .agg(
+            Avg_CR=('7 Day Conversion Rate', 'mean'),
+            Count=('ASIN', 'count'),
+            ASINs=('ASIN', lambda x: ', '.join(sorted(x.unique())))
+        )
+        .reset_index()
+        .sort_values(by='Avg_CR', ascending=False)
+    )
+
+    st.subheader("📈 Bảng tổng hợp tổ hợp thiết kế theo ASIN")
+    st.dataframe(summary_df, use_container_width=True)
