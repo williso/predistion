@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
 
 # Load and preprocess data
@@ -8,7 +7,7 @@ import plotly.express as px
 def load_data():
     df = pd.read_csv("Merged_ASIN_Data.csv")
     df = df[[
-        'Niche', 'Product Type', 'Layout ( Text and Image)', 'Number of Colors', 'Trend Quote',
+        'ASIN', 'Niche', 'Product Type', 'Layout ( Text and Image)', 'Number of Colors', 'Trend Quote',
         'Recipient/Sender in the Message', 'Color', 'Message Content', 'Style Design',
         'Tone Design', 'Motif Design', '7 Day Conversion Rate'
     ]].dropna()
@@ -41,7 +40,24 @@ else:
     ).reset_index().sort_values(by='Avg_Conversion_Rate', ascending=False)
 
     st.subheader("📈 Tổ hợp thiết kế có tỷ lệ chuyển đổi cao nhất")
-    st.dataframe(summary)
+    
+    for idx, row in summary.iterrows():
+        combo_filter = (
+            (filtered_df['Layout ( Text and Image)'] == row['Layout ( Text and Image)']) &
+            (filtered_df['Number of Colors'] == row['Number of Colors']) &
+            (filtered_df['Trend Quote'] == row['Trend Quote']) &
+            (filtered_df['Recipient/Sender in the Message'] == row['Recipient/Sender in the Message']) &
+            (filtered_df['Color'] == row['Color']) &
+            (filtered_df['Message Content'] == row['Message Content']) &
+            (filtered_df['Style Design'] == row['Style Design']) &
+            (filtered_df['Tone Design'] == row['Tone Design']) &
+            (filtered_df['Motif Design'] == row['Motif Design'])
+        )
+        asin_subset = filtered_df[combo_filter]
+        title_text = f"👉 {row['Style Design']} | {row['Color']} | {row['Tone Design']} | CR: {row['Avg_Conversion_Rate']:.2%} | Count: {row['Count']}"
+        with st.expander(title_text):
+            display_cols = ['ASIN', '7 Day Conversion Rate'] if 'ASIN' in asin_subset.columns else ['7 Day Conversion Rate']
+            st.dataframe(asin_subset[display_cols])
 
     st.subheader("🔝 Top 10 tổ hợp có CR cao nhất")
     top10 = summary.head(10).copy()
@@ -58,11 +74,7 @@ else:
     st.subheader("📊 Phân bố CR theo từng yếu tố")
     selected_factor = st.selectbox(
         "Chọn yếu tố để phân tích",
-        [
-            'Layout ( Text and Image)', 'Number of Colors', 'Trend Quote',
-            'Recipient/Sender in the Message', 'Color', 'Message Content',
-            'Style Design', 'Tone Design', 'Motif Design'
-        ]
+        group_cols
     )
     fig_box = px.box(filtered_df, x=selected_factor, y='7 Day Conversion Rate', points='all', title=f'CR theo {selected_factor}')
     st.plotly_chart(fig_box)
