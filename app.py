@@ -55,29 +55,44 @@ summary_df = (
 
 # Hiển thị bảng tổng hợp tổ hợp
 st.subheader("📈 Tổng hợp tất cả tổ hợp thiết kế")
-selected_row = st.dataframe(summary_df, use_container_width=True, hide_index=True)
+st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
 # ------------------------------------------
-# 5. Lọc và hiển thị ASIN theo tổ hợp chọn
+# 5. Chia ASIN theo nhóm CR
 # ------------------------------------------
-# Cho phép chọn tổ hợp từ bảng bằng dropdown
-with st.expander("📌 Xem danh sách ASIN theo tổ hợp thiết kế"):
+with st.expander("📌 Xem phân loại ASIN theo nhóm CR trong tổ hợp đã chọn"):
     st.markdown("### 🧩 Chọn một tổ hợp:")
 
-    # Tạo tuple định danh tổ hợp
+    # Tạo chuỗi mô tả tổ hợp
     summary_df["Tổ hợp"] = summary_df[group_cols].astype(str).agg(" | ".join, axis=1)
     option = st.selectbox("Chọn tổ hợp thiết kế:", summary_df["Tổ hợp"].tolist())
 
-    # Lấy đúng dòng tổ hợp được chọn
+    # Lấy dòng tương ứng
     selected_combo_row = summary_df[summary_df["Tổ hợp"] == option].iloc[0]
 
-    # Tạo điều kiện lọc tương ứng
+    # Lọc ASIN thuộc tổ hợp đó
     condition = True
     for col in group_cols:
         condition &= (filtered_df[col] == selected_combo_row[col])
+    asin_df = filtered_df[condition].copy()
 
-    asin_df = filtered_df[condition].sort_values(by='7 Day Conversion Rate', ascending=False)
+    # Tính phân vị cho CR
+    q33 = asin_df['7 Day Conversion Rate'].quantile(0.33)
+    q66 = asin_df['7 Day Conversion Rate'].quantile(0.66)
 
-    # Hiển thị danh sách ASIN
-    st.markdown("### 📋 Danh sách ASIN trong tổ hợp đã chọn")
-    st.dataframe(asin_df[['ASIN', '7 Day Conversion Rate']], use_container_width=True)
+    # Phân nhóm
+    asin_df['CR Group'] = pd.cut(
+        asin_df['7 Day Conversion Rate'],
+        bins=[-float('inf'), q33, q66, float('inf')],
+        labels=['Dưới trung bình', 'Trung bình', 'Top']
+    )
+
+    # Hiển thị từng nhóm
+    st.markdown("#### 🟢 Nhóm Top")
+    st.dataframe(asin_df[asin_df['CR Group'] == 'Top'][['ASIN']], use_container_width=True, hide_index=True)
+
+    st.markdown("#### 🟡 Nhóm Trung bình")
+    st.dataframe(asin_df[asin_df['CR Group'] == 'Trung bình'][['ASIN']], use_container_width=True, hide_index=True)
+
+    st.markdown("#### 🔴 Nhóm Dưới trung bình")
+    st.dataframe(asin_df[asin_df['CR Group'] == 'Dưới trung bình'][['ASIN']], use_container_width=True, hide_index=True)
