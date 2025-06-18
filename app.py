@@ -37,4 +37,4 @@ else:
     st.subheader("📈 Tổ hợp thiết kế có tỷ lệ chuyển đổi cao nhất")
     st.dataframe(summary)
 
-    st.bar_chart(summary.set_index('Style Design')['Avg_Conversion_Rate'])
+    
