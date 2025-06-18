@@ -7,7 +7,7 @@ import numpy as np
 def load_data():
     df = pd.read_csv("Merged_ASIN_Data.csv")
     df = df[[
-        'Niche', 'Product Type', 'Color', 'Message Content', 'Style Design',
+        'ASIN', 'Niche', 'Product Type', 'Color', 'Message Content', 'Style Design',
         'Tone Design', 'Motif Design', '7 Day Conversion Rate'
     ]].dropna()
     df['7 Day Conversion Rate'] = pd.to_numeric(df['7 Day Conversion Rate'], errors='coerce')
@@ -29,12 +29,12 @@ if filtered_df.empty:
     st.warning("Không có dữ liệu cho tổ hợp Niche và Product Type này.")
 else:
     group_cols = ['Color', 'Message Content', 'Style Design', 'Tone Design', 'Motif Design']
-    summary = filtered_df.groupby(group_cols).agg(
+    grouped = filtered_df.groupby(group_cols).agg(
         Avg_Conversion_Rate=('7 Day Conversion Rate', 'mean'),
-        Count=('7 Day Conversion Rate', 'count')
+        ASINs=('ASIN', lambda x: ', '.join(sorted(set(x))))
     ).reset_index().sort_values(by='Avg_Conversion_Rate', ascending=False)
 
     st.subheader("📈 Tổ hợp thiết kế có tỷ lệ chuyển đổi cao nhất")
-    st.dataframe(summary)
+    st.dataframe(grouped)
 
-    
+    st.bar_chart(grouped.set_index('Style Design')['Avg_Conversion_Rate'])
