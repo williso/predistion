@@ -10,7 +10,7 @@ def load_data():
     df = df[[
         'ASIN', 'Niche', 'Product Type', 'Layout ( Text and Image)', 'Number of Colors', 'Trend Quote',
         'Recipient/Sender in the Message', 'Color', 'Message Content', 'Style Design',
-        'Tone Design', 'Motif Design', '7 Day Conversion Rate'
+        'Tone Design', 'Motif Design', '7 Day Conversion Rate', 'Image_URL'
     ]].dropna()
     df['7 Day Conversion Rate'] = pd.to_numeric(df['7 Day Conversion Rate'], errors='coerce')
     df.dropna(subset=['7 Day Conversion Rate'], inplace=True)
@@ -58,9 +58,9 @@ st.subheader("📈 Tổng hợp tất cả tổ hợp thiết kế")
 st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
 # ------------------------------------------
-# 5. Chia ASIN theo nhóm CR
+# 5. Chia ASIN theo nhóm CR và hiển thị ảnh
 # ------------------------------------------
-with st.expander("📌 Xem phân loại ASIN theo nhóm CR trong tổ hợp đã chọn"):
+with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR trong tổ hợp đã chọn"):
     st.markdown("### 🧩 Chọn một tổ hợp:")
 
     # Tạo chuỗi mô tả tổ hợp
@@ -87,12 +87,13 @@ with st.expander("📌 Xem phân loại ASIN theo nhóm CR trong tổ hợp đã
         labels=['Dưới trung bình', 'Trung bình', 'Top']
     )
 
-    # Hiển thị từng nhóm
-    st.markdown("#### 🟢 Nhóm Top")
-    st.dataframe(asin_df[asin_df['CR Group'] == 'Top'][['ASIN']], use_container_width=True, hide_index=True)
+    # Hiển thị hình ảnh theo nhóm
+    def show_images_by_group(df, group_label, color_emoji):
+        st.markdown(f"#### {color_emoji} Nhóm {group_label}")
+        group_df = df[df['CR Group'] == group_label]
+        for url in group_df['Image_URL']:
+            st.image(url, width=150)
 
-    st.markdown("#### 🟡 Nhóm Trung bình")
-    st.dataframe(asin_df[asin_df['CR Group'] == 'Trung bình'][['ASIN']], use_container_width=True, hide_index=True)
-
-    st.markdown("#### 🔴 Nhóm Dưới trung bình")
-    st.dataframe(asin_df[asin_df['CR Group'] == 'Dưới trung bình'][['ASIN']], use_container_width=True, hide_index=True)
+    show_images_by_group(asin_df, 'Top', '🟢')
+    show_images_by_group(asin_df, 'Trung bình', '🟡')
+    show_images_by_group(asin_df, 'Dưới trung bình', '🔴')
