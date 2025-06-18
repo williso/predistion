@@ -43,13 +43,13 @@ st.title("🎨 Conversion Rate Predictor for Design Combinations")
 
 df = load_data()
 
+selected_niche = st.selectbox("Niche", sorted(df['Niche'].unique()))
+filtered_product_types = df[df['Niche'] == selected_niche]['Product Type'].unique()
+selected_product_type = st.selectbox("Product Type", sorted(filtered_product_types))
+
+design_df = df[(df['Niche'] == selected_niche) & (df['Product Type'] == selected_product_type)]
+
 with st.form("input_form"):
-    selected_niche = st.selectbox("Niche", sorted(df['Niche'].unique()))
-    filtered_product_types = df[df['Niche'] == selected_niche]['Product Type'].unique()
-    selected_product_type = st.selectbox("Product Type", sorted(filtered_product_types))
-
-    design_df = df[(df['Niche'] == selected_niche) & (df['Product Type'] == selected_product_type)]
-
     user_input = {
         'Niche': selected_niche,
         'Product Type': selected_product_type,
