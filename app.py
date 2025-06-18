@@ -20,14 +20,22 @@ st.title("📊 Design Combination Conversion Stats")
 
 df = load_data()
 
-selected_niche = st.selectbox("Select Niche", sorted(df['Niche'].unique()))
-filtered_product_types = df[df['Niche'] == selected_niche]['Product Type'].unique()
-selected_product_type = st.selectbox("Select Product Type", sorted(filtered_product_types))
+# Chọn nhiều Niche và Product Type
+selected_niches = st.multiselect("Select Niche(s)", sorted(df['Niche'].unique()))
+if selected_niches:
+    filtered_product_types = df[df['Niche'].isin(selected_niches)]['Product Type'].unique()
+    selected_product_types = st.multiselect("Select Product Type(s)", sorted(filtered_product_types))
+else:
+    selected_product_types = []
 
-filtered_df = df[(df['Niche'] == selected_niche) & (df['Product Type'] == selected_product_type)]
+# Lọc theo Niche và Product Type
+filtered_df = df[
+    (df['Niche'].isin(selected_niches)) &
+    (df['Product Type'].isin(selected_product_types))
+]
 
 if filtered_df.empty:
-    st.warning("Không có dữ liệu cho tổ hợp Niche và Product Type này.")
+    st.warning("⚠️ Không có dữ liệu cho tổ hợp Niche và Product Type đã chọn.")
 else:
     group_cols = [
         'Layout ( Text and Image)', 'Number of Colors', 'Trend Quote',
@@ -39,11 +47,16 @@ else:
         ASINs=('ASIN', lambda x: ', '.join(sorted(set(x))))
     ).reset_index()
 
-    top_10 = grouped.sort_values(by='Avg_Conversion_Rate', ascending=False).head(10)
-    bottom_10 = grouped.sort_values(by='Avg_Conversion_Rate', ascending=True).head(10)
+    # Loại bỏ các dòng trùng giá trị CR trung bình để tránh xuất hiện trong cả top và bottom
+    grouped_no_duplicates = grouped.drop_duplicates(subset=['Avg_Conversion_Rate'])
+
+    top_10 = grouped_no_duplicates.sort_values(by='Avg_Conversion_Rate', ascending=False).head(10)
+    bottom_10 = grouped_no_duplicates.sort_values(by='Avg_Conversion_Rate', ascending=True).head(10)
 
     st.subheader("📈 Tổ hợp thiết kế có tỷ lệ chuyển đổi cao nhất")
     st.dataframe(top_10)
+
+    st.bar_chart(top_10.set_index('Style Design')['Avg_Conversion_Rate'])
 
     st.subheader("🔻 Tổ hợp thiết kế có tỷ lệ chuyển đổi thấp nhất")
     st.dataframe(bottom_10)
