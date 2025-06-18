@@ -11,7 +11,7 @@ def load_data():
         'ASIN', 'Niche', 'Product Type', 'Layout ( Text and Image)', 'Number of Colors', 'Trend Quote',
         'Recipient/Sender in the Message', 'Color', 'Message Content', 'Style Design',
         'Tone Design', 'Motif Design', '7 Day Conversion Rate', 'Image_URL'
-    ]].dropna()
+    ]].dropna(subset=['ASIN', 'Image_URL'])
     df['7 Day Conversion Rate'] = pd.to_numeric(df['7 Day Conversion Rate'], errors='coerce')
     df.dropna(subset=['7 Day Conversion Rate'], inplace=True)
     return df
@@ -87,13 +87,25 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR trong t�
         labels=['Dưới trung bình', 'Trung bình', 'Top']
     )
 
-    # Hiển thị hình ảnh theo nhóm
-    def show_images_by_group(df, group_label, color_emoji):
+    # --------------------------
+    # Hàm hiển thị hình ảnh lưới
+    # --------------------------
+    def show_images_by_group(df, group_label, color_emoji, images_per_row=4):
         st.markdown(f"#### {color_emoji} Nhóm {group_label}")
-        group_df = df[df['CR Group'] == group_label]
-        for url in group_df['Image_URL']:
-            st.image(url, width=150)
+        group_df = df[df['CR Group'] == group_label].drop_duplicates(subset='ASIN')
 
+        image_urls = group_df['Image_URL'].tolist()
+        asins = group_df['ASIN'].tolist()
+
+        for i in range(0, len(image_urls), images_per_row):
+            cols = st.columns(images_per_row)
+            for j, col in enumerate(cols):
+                if i + j < len(image_urls):
+                    with col:
+                        st.image(image_urls[i + j], width=150)
+                        st.caption(asins[i + j])  # Hiển thị ASIN dưới ảnh
+
+    # Hiển thị từng nhóm
     show_images_by_group(asin_df, 'Top', '🟢')
     show_images_by_group(asin_df, 'Trung bình', '🟡')
     show_images_by_group(asin_df, 'Dưới trung bình', '🔴')
