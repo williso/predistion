@@ -70,7 +70,7 @@ avg_of_all = summary_df['Avg_CR'].mean()
 
 def highlight_full_row(row):
     if row['Avg_CR'] > avg_of_all:
-        return ['color: #bbdebf; font-weight: bold' for _ in row]
+        return ['color: #4e7853; font-weight: bold' for _ in row]
     else:
         return ['' for _ in row]
 
