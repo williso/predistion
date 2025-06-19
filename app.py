@@ -141,4 +141,30 @@ with st.expander("📊 Phân tích yếu tố thiết kế theo nhóm CR"):
         tooltip=[selected_col, 'Số lượng']
     ).properties(width=800, height=300)
 
-    st.altair_chart(bar_chart, use_contain_
+    st.altair_chart(bar_chart, use_container_width=True)
+
+    # Biểu đồ 2: So sánh tỷ lệ xuất hiện giữa nhóm CR Trên và Dưới trung bình
+    st.markdown("##### ⚖️ So sánh tỷ lệ xuất hiện giữa nhóm CR Trên và Dưới trung bình")
+
+    cr_groups = filtered_df[['CR Group', selected_col]].dropna()
+    counts = cr_groups.groupby(['CR Group', selected_col]).size().reset_index(name='Count')
+    group_totals = filtered_df.groupby('CR Group')[selected_col].count().reset_index(name='Total')
+    counts = counts.merge(group_totals, on='CR Group')
+    counts['Tỷ lệ (%)'] = round(100 * counts['Count'] / counts['Total'], 2)
+
+    pivot_df = counts.pivot(index=selected_col, columns='CR Group', values='Tỷ lệ (%)').fillna(0)
+    pivot_df['Mean'] = pivot_df.mean(axis=1)
+    pivot_df = pivot_df.sort_values(by='Mean', ascending=False).drop(columns='Mean').head(20)
+    pivot_df = pivot_df.reset_index().melt(id_vars=selected_col, var_name='CR Group', value_name='Tỷ lệ (%)')
+
+    chart = alt.Chart(pivot_df).mark_bar().encode(
+        x=alt.X(f'{selected_col}:N', title='Giá trị phân loại', sort='-y'),
+        y=alt.Y('Tỷ lệ (%):Q', title='Tỷ lệ xuất hiện (%)'),
+        color=alt.Color('CR Group:N',
+                        scale=alt.Scale(domain=['Trên trung bình', 'Dưới trung bình'],
+                                        range=['#83c9ff', '#1569c9']),
+                        legend=alt.Legend(title="Nhóm CR")),
+        tooltip=[selected_col, 'CR Group', 'Tỷ lệ (%)']
+    ).properties(width=800, height=400).interactive()
+
+    st.altair_chart(chart, use_container_width=True)
