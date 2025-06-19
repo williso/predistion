@@ -157,12 +157,15 @@ with st.expander("📊 Phân tích yếu tố thiết kế theo nhóm CR"):
     pivot_df = pivot_df.sort_values(by='Mean', ascending=False).drop(columns='Mean').head(20)
     pivot_df = pivot_df.reset_index().melt(id_vars=selected_col, var_name='CR Group', value_name='Tỷ lệ (%)')
 
+    # Thiết lập thứ tự hiển thị nhóm CR
+    cr_order = ['Trên trung bình', 'Dưới trung bình']
+    category_order = pivot_df[selected_col].unique().tolist()
+
     chart = alt.Chart(pivot_df).mark_bar().encode(
-        x=alt.X(f'{selected_col}:N', title='Giá trị phân loại', sort='-y'),
+        x=alt.X(f'{selected_col}:N', title='Giá trị phân loại', sort=category_order),
         y=alt.Y('Tỷ lệ (%):Q', title='Tỷ lệ xuất hiện (%)'),
         color=alt.Color('CR Group:N',
-                        scale=alt.Scale(domain=['Trên trung bình', 'Dưới trung bình'],
-                                        range=['#83c9ff', '#1569c9']),
+                        scale=alt.Scale(domain=cr_order, range=['#83c9ff', '#1569c9']),
                         legend=alt.Legend(title="Nhóm CR")),
         tooltip=[selected_col, 'CR Group', 'Tỷ lệ (%)']
     ).properties(width=800, height=400).interactive()
