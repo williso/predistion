@@ -113,6 +113,7 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR"):
                         st.caption(asins[i + j])
 
     show_images_by_group(filtered_df, 'Trên trung bình', '🟢')
+    show_images_by_group(filtered_df, 'Trung bình', '🟡')
     show_images_by_group(filtered_df, 'Dưới trung bình', '🔴')
 
 # --------------------------------------------
@@ -157,7 +158,6 @@ with st.expander("📊 Phân tích yếu tố thiết kế theo nhóm CR"):
     pivot_df = pivot_df.sort_values(by='Mean', ascending=False).drop(columns='Mean').head(20)
     pivot_df = pivot_df.reset_index().melt(id_vars=selected_col, var_name='CR Group', value_name='Tỷ lệ (%)')
 
-    # Thiết lập thứ tự hiển thị nhóm CR
     cr_order = ['Trên trung bình', 'Dưới trung bình']
     category_order = pivot_df[selected_col].unique().tolist()
 
@@ -166,7 +166,9 @@ with st.expander("📊 Phân tích yếu tố thiết kế theo nhóm CR"):
         y=alt.Y('Tỷ lệ (%):Q', title='Tỷ lệ xuất hiện (%)'),
         color=alt.Color('CR Group:N',
                         scale=alt.Scale(domain=cr_order, range=['#83c9ff', '#1569c9']),
-                        legend=alt.Legend(title="Nhóm CR")),
+                        legend=alt.Legend(title="Nhóm CR"),
+                        sort=cr_order),
+        order=alt.Order('CR Group:N', sort='ascending'),
         tooltip=[selected_col, 'CR Group', 'Tỷ lệ (%)']
     ).properties(width=800, height=400).interactive()
 
