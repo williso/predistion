@@ -25,23 +25,30 @@ def load_data():
 # 2. Giao diện Streamlit
 # ------------------------
 st.title("📊 Tổng hợp tổ hợp thiết kế theo ASIN và CR")
-st.caption("Lọc theo Niche bắt buộc — Product Type có thể bỏ trống để hiển thị tất cả")
+st.caption("Lọc theo **Niche** (cho phép chọn nhiều) và **Product Type** (tuỳ chọn)")
 
 df = load_data()
 
 # ---------------------------------------
-# 3. Chọn Niche và Product Type (optional)
+# 3. Chọn Niche (đa lựa chọn) và Product Type (optional)
 # ---------------------------------------
-selected_niche = st.selectbox("🔍 Chọn Niche", sorted(df['Niche'].unique()))
-filtered_product_types = df[df['Niche'] == selected_niche]['Product Type'].dropna().unique()
-product_type_options = ["-- Tất cả --"] + sorted(filtered_product_types.tolist())
-selected_product_type = st.selectbox("📦 Chọn Product Type (tuỳ chọn)", product_type_options)
+selected_niches = st.multiselect("🔍 Chọn Niche", sorted(df['Niche'].unique()))
 
-# Lọc theo lựa chọn
-if selected_product_type == "-- Tất cả --":
-    filtered_df = df[df['Niche'] == selected_niche]
+if selected_niches:
+    filtered_product_types = df[df['Niche'].isin(selected_niches)]['Product Type'].dropna().unique()
+    product_type_options = ["-- Tất cả --"] + sorted(filtered_product_types.tolist())
+    selected_product_type = st.selectbox("📦 Chọn Product Type (tuỳ chọn)", product_type_options)
+
+    if selected_product_type == "-- Tất cả --":
+        filtered_df = df[df['Niche'].isin(selected_niches)]
+    else:
+        filtered_df = df[
+            (df['Niche'].isin(selected_niches)) &
+            (df['Product Type'] == selected_product_type)
+        ]
 else:
-    filtered_df = df[(df['Niche'] == selected_niche) & (df['Product Type'] == selected_product_type)]
+    st.warning("Vui lòng chọn ít nhất một Niche để hiển thị dữ liệu.")
+    st.stop()
 
 # ------------------------------------------
 # 4. Tổng hợp tổ hợp thiết kế
@@ -112,15 +119,9 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR"):
 with st.expander("📊 Phân tích yếu tố thiết kế theo nhóm CR"):
     st.markdown("#### 🎛️ Chọn yếu tố để phân tích cả 2 biểu đồ bên dưới")
 
-    categorical_cols = [
-        'Layout ( Text and Image)', 'Number of Colors', 'Trend Quote',
-        'Recipient/Sender in the Message', 'Color', 'Message Content',
-        'Style Design', 'Tone Design', 'Motif Design'
-    ]
-
+    categorical_cols = group_cols
     selected_col = st.selectbox("Chọn yếu tố phân tích:", categorical_cols)
 
-    # Biểu đồ 1: Tần suất trong nhóm CR Trên TB + tooltip ASIN
     st.markdown("##### 📌 Biểu đồ tần suất trong nhóm CR Trên trung bình")
     high_cr_df = filtered_df[filtered_df['CR Group'] == 'Trên trung bình']
 
@@ -141,11 +142,9 @@ with st.expander("📊 Phân tích yếu tố thiết kế theo nhóm CR"):
 
     st.altair_chart(bar_chart, use_container_width=True)
 
-    # Biểu đồ 2: So sánh tỷ lệ + tooltip ASIN
     st.markdown("##### ⚖️ So sánh tỷ lệ xuất hiện giữa nhóm CR Trên và Dưới trung bình")
 
     cr_groups = filtered_df[['CR Group', selected_col, 'ASIN']].dropna()
-
     asin_map = (
         cr_groups.groupby(['CR Group', selected_col])['ASIN']
         .agg(lambda x: ', '.join(x.astype(str).unique()[:20]) + ('...' if len(x.unique()) > 20 else ''))
