@@ -122,7 +122,11 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR"):
     show_images_by_group(filtered_df, 'Trên trung bình', '🟢')
     show_images_by_group(filtered_df, 'Trung bình', '🟡')
     show_images_by_group(filtered_df, 'Dưới trung bình', '🔴')
-    with st.expander("📊 Biểu đồ tần suất yếu tố trong nhóm ASIN có CR trên trung bình"):
+
+# --------------------------------------------
+# 6. Biểu đồ phân tích yếu tố trong nhóm CR cao
+# --------------------------------------------
+with st.expander("📊 Biểu đồ tần suất yếu tố trong nhóm ASIN có CR trên trung bình"):
     st.markdown("#### 🧮 Tần suất các yếu tố xuất hiện trong nhóm CR cao")
 
     high_cr_df = filtered_df[filtered_df['CR Group'] == 'Trên trung bình']
@@ -139,4 +143,3 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR"):
     value_counts.columns = [selected_col, 'Số lượng']
 
     st.bar_chart(value_counts.set_index(selected_col))
-
