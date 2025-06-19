@@ -181,3 +181,19 @@ with st.expander("📊 Phân tích yếu tố thiết kế theo nhóm CR"):
     ).properties(width=800, height=400).interactive()
 
     st.altair_chart(chart, use_container_width=True)
+
+# ---------------------------------------------
+# 7. Sidebar: Xem hình ảnh theo giá trị phân loại
+# ---------------------------------------------
+st.sidebar.markdown("## 🖼️ Xem ảnh ASIN theo giá trị phân loại")
+
+unique_values = filtered_df[selected_col].dropna().unique().tolist()
+selected_value_sidebar = st.sidebar.selectbox(
+    f"Chọn {selected_col} để xem hình ảnh",
+    options=unique_values
+)
+
+subset_sidebar = filtered_df[filtered_df[selected_col] == selected_value_sidebar].drop_duplicates(subset='ASIN')
+
+for _, row in subset_sidebar.iterrows():
+    st.sidebar.image(row['Image_URL'], caption=row['ASIN'], width=150)
