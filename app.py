@@ -63,9 +63,6 @@ summary_df = (
     .sort_values(by='Avg_CR', ascending=False)
 )
 
-# -------------------------------
-# Tô đậm dòng có CR > trung bình
-# -------------------------------
 avg_of_all = summary_df['Avg_CR'].mean()
 
 def highlight_full_row(row):
@@ -87,19 +84,14 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR"):
 
     mean_cr = filtered_df['7 Day Conversion Rate'].mean()
 
-    # ✅ Cách 2: Gom nhóm Trung bình vào Trên trung bình
     def categorize_cr(cr, mean):
-        if cr >= mean:
-            return 'Trên trung bình'
-        else:
-            return 'Dưới trung bình'
+        return 'Trên trung bình' if cr >= mean else 'Dưới trung bình'
 
     filtered_df['CR Group'] = filtered_df['7 Day Conversion Rate'].apply(lambda x: categorize_cr(x, mean_cr))
 
     def show_images_by_group(df, group_label, color_emoji, images_per_row=4):
         st.markdown(f"#### {color_emoji} Nhóm {group_label}")
         group_df = df[df['CR Group'] == group_label].drop_duplicates(subset='ASIN')
-
         image_urls = group_df['Image_URL'].tolist()
         asins = group_df['ASIN'].tolist()
 
@@ -128,33 +120,51 @@ with st.expander("📊 Phân tích yếu tố thiết kế theo nhóm CR"):
 
     selected_col = st.selectbox("Chọn yếu tố phân tích:", categorical_cols)
 
-    # Biểu đồ 1: Tần suất trong nhóm CR Trên TB
+    # Biểu đồ 1: Tần suất trong nhóm CR Trên TB + tooltip ASIN
     st.markdown("##### 📌 Biểu đồ tần suất trong nhóm CR Trên trung bình")
     high_cr_df = filtered_df[filtered_df['CR Group'] == 'Trên trung bình']
-    value_counts = high_cr_df[selected_col].value_counts().reset_index()
-    value_counts.columns = [selected_col, 'Số lượng']
+
+    value_counts = (
+        high_cr_df.groupby(selected_col)
+        .agg(
+            Số_lượng=('ASIN', 'count'),
+            ASINs=('ASIN', lambda x: ', '.join(x.astype(str).unique()[:20]) + ('...' if len(x.unique()) > 20 else ''))
+        )
+        .reset_index()
+    )
 
     bar_chart = alt.Chart(value_counts).mark_bar(color='#83c9ff').encode(
         x=alt.X(f'{selected_col}:N', title='Giá trị phân loại', sort='-y'),
-        y=alt.Y('Số lượng:Q', title='Tần suất'),
-        tooltip=[selected_col, 'Số lượng']
+        y=alt.Y('Số_lượng:Q', title='Tần suất'),
+        tooltip=[selected_col, 'Số_lượng', alt.Tooltip('ASINs:N', title='ASIN')]
     ).properties(width=800, height=300)
 
     st.altair_chart(bar_chart, use_container_width=True)
 
-    # Biểu đồ 2: So sánh tỷ lệ xuất hiện giữa nhóm CR Trên và Dưới trung bình
+    # Biểu đồ 2: So sánh tỷ lệ + tooltip ASIN
     st.markdown("##### ⚖️ So sánh tỷ lệ xuất hiện giữa nhóm CR Trên và Dưới trung bình")
 
-    cr_groups = filtered_df[['CR Group', selected_col]].dropna()
+    cr_groups = filtered_df[['CR Group', selected_col, 'ASIN']].dropna()
+
+    asin_map = (
+        cr_groups.groupby(['CR Group', selected_col])['ASIN']
+        .agg(lambda x: ', '.join(x.astype(str).unique()[:20]) + ('...' if len(x.unique()) > 20 else ''))
+        .reset_index(name='ASINs')
+    )
+
     counts = cr_groups.groupby(['CR Group', selected_col]).size().reset_index(name='Count')
     group_totals = filtered_df.groupby('CR Group')[selected_col].count().reset_index(name='Total')
     counts = counts.merge(group_totals, on='CR Group')
     counts['Tỷ lệ (%)'] = round(100 * counts['Count'] / counts['Total'], 2)
+    counts = counts.merge(asin_map, on=['CR Group', selected_col])
 
     pivot_df = counts.pivot(index=selected_col, columns='CR Group', values='Tỷ lệ (%)').fillna(0)
     pivot_df['Mean'] = pivot_df.mean(axis=1)
     pivot_df = pivot_df.sort_values(by='Mean', ascending=False).drop(columns='Mean').head(20)
     pivot_df = pivot_df.reset_index().melt(id_vars=selected_col, var_name='CR Group', value_name='Tỷ lệ (%)')
+
+    asin_mapping = counts.set_index(['CR Group', selected_col])['ASINs'].to_dict()
+    pivot_df['ASINs'] = pivot_df.apply(lambda row: asin_mapping.get((row['CR Group'], row[selected_col]), ""), axis=1)
 
     cr_order = ['Trên trung bình', 'Dưới trung bình']
     category_order = pivot_df[selected_col].unique().tolist()
@@ -167,7 +177,7 @@ with st.expander("📊 Phân tích yếu tố thiết kế theo nhóm CR"):
                         legend=alt.Legend(title="Nhóm CR"),
                         sort=cr_order),
         order=alt.Order('CR Group:N', sort='ascending'),
-        tooltip=[selected_col, 'CR Group', 'Tỷ lệ (%)']
+        tooltip=[selected_col, 'CR Group', 'Tỷ lệ (%)', alt.Tooltip('ASINs:N', title='ASIN')]
     ).properties(width=800, height=400).interactive()
 
     st.altair_chart(chart, use_container_width=True)
