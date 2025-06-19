@@ -112,12 +112,8 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR"):
                         st.image(image_urls[i + j], width=150)
                         st.caption(asins[i + j])
 
-    # Hiển thị theo điều kiện
-    if len(filtered_product_types) == 1:
-        show_images_by_group(filtered_df, 'Trên trung bình', '🟢')
-    else:
-        show_images_by_group(filtered_df, 'Trên trung bình', '🟢')
-        show_images_by_group(filtered_df, 'Dưới trung bình', '🔴')
+    show_images_by_group(filtered_df, 'Trên trung bình', '🟢')
+    show_images_by_group(filtered_df, 'Dưới trung bình', '🔴')
 
 # --------------------------------------------
 # 6. Phân tích yếu tố với 1 filter dùng chung
