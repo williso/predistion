@@ -122,3 +122,21 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR"):
     show_images_by_group(filtered_df, 'Trên trung bình', '🟢')
     show_images_by_group(filtered_df, 'Trung bình', '🟡')
     show_images_by_group(filtered_df, 'Dưới trung bình', '🔴')
+    with st.expander("📊 Biểu đồ tần suất yếu tố trong nhóm ASIN có CR trên trung bình"):
+    st.markdown("#### 🧮 Tần suất các yếu tố xuất hiện trong nhóm CR cao")
+
+    high_cr_df = filtered_df[filtered_df['CR Group'] == 'Trên trung bình']
+
+    categorical_cols = [
+        'Layout ( Text and Image)', 'Number of Colors', 'Trend Quote',
+        'Recipient/Sender in the Message', 'Color', 'Message Content',
+        'Style Design', 'Tone Design', 'Motif Design'
+    ]
+
+    selected_col = st.selectbox("Chọn yếu tố để xem tần suất:", categorical_cols)
+
+    value_counts = high_cr_df[selected_col].value_counts().reset_index()
+    value_counts.columns = [selected_col, 'Số lượng']
+
+    st.bar_chart(value_counts.set_index(selected_col))
+
