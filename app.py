@@ -32,8 +32,6 @@ df = load_data()
 # 3. Chọn Niche và Product Type (optional)
 # ---------------------------------------
 selected_niche = st.selectbox("🔍 Chọn Niche", sorted(df['Niche'].unique()))
-
-# Danh sách Product Type có thêm '-- Tất cả --'
 filtered_product_types = df[df['Niche'] == selected_niche]['Product Type'].dropna().unique()
 product_type_options = ["-- Tất cả --"] + sorted(filtered_product_types.tolist())
 selected_product_type = st.selectbox("📦 Chọn Product Type (tuỳ chọn)", product_type_options)
@@ -81,15 +79,13 @@ st.subheader("📈 Tổng hợp tất cả tổ hợp thiết kế")
 st.dataframe(styled_df, use_container_width=True, hide_index=True)
 
 # ------------------------------------------
-# 5. Chia ASIN theo nhóm CR và hiển thị ảnh
+# 5. Phân loại CR và hiển thị ảnh
 # ------------------------------------------
 with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR"):
     st.markdown("### 🧩 Phân loại toàn bộ ASIN theo CR trung bình")
 
-    # Tính trung bình CR toàn bộ filtered_df
     mean_cr = filtered_df['7 Day Conversion Rate'].mean()
 
-    # Gán nhóm CR theo trung bình
     def categorize_cr(cr, mean):
         if cr > mean:
             return 'Trên trung bình'
@@ -100,9 +96,6 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR"):
 
     filtered_df['CR Group'] = filtered_df['7 Day Conversion Rate'].apply(lambda x: categorize_cr(x, mean_cr))
 
-    # --------------------------
-    # Hàm hiển thị hình ảnh lưới
-    # --------------------------
     def show_images_by_group(df, group_label, color_emoji, images_per_row=4):
         st.markdown(f"#### {color_emoji} Nhóm {group_label}")
         group_df = df[df['CR Group'] == group_label].drop_duplicates(subset='ASIN')
@@ -118,13 +111,12 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR"):
                         st.image(image_urls[i + j], width=150)
                         st.caption(asins[i + j])
 
-    # Hiển thị từng nhóm
     show_images_by_group(filtered_df, 'Trên trung bình', '🟢')
     show_images_by_group(filtered_df, 'Trung bình', '🟡')
     show_images_by_group(filtered_df, 'Dưới trung bình', '🔴')
 
 # --------------------------------------------
-# 6. Biểu đồ phân tích yếu tố trong nhóm CR cao
+# 6. Biểu đồ tần suất trong nhóm CR cao
 # --------------------------------------------
 with st.expander("📊 Biểu đồ tần suất yếu tố trong nhóm ASIN có CR trên trung bình"):
     st.markdown("#### 🧮 Tần suất các yếu tố xuất hiện trong nhóm CR cao")
@@ -137,9 +129,31 @@ with st.expander("📊 Biểu đồ tần suất yếu tố trong nhóm ASIN có
         'Style Design', 'Tone Design', 'Motif Design'
     ]
 
-    selected_col = st.selectbox("Chọn yếu tố để xem tần suất:", categorical_cols)
+    selected_col = st.selectbox("Chọn yếu tố để xem tần suất:", categorical_cols, key="freq_col")
 
     value_counts = high_cr_df[selected_col].value_counts().reset_index()
     value_counts.columns = [selected_col, 'Số lượng']
 
     st.bar_chart(value_counts.set_index(selected_col))
+
+# --------------------------------------------
+# 7. Biểu đồ so sánh tỷ lệ giữa 2 nhóm CR
+# --------------------------------------------
+with st.expander("📊 So sánh tỷ lệ xuất hiện yếu tố giữa nhóm CR Trên và Dưới trung bình"):
+    st.markdown("#### ⚖️ So sánh tỷ lệ giữa hai nhóm CR")
+
+    selected_col = st.selectbox("Chọn yếu tố để so sánh:", categorical_cols, key="compare")
+
+    cr_groups = filtered_df[['CR Group', selected_col]].dropna()
+    counts = cr_groups.groupby(['CR Group', selected_col]).size().reset_index(name='Count')
+
+    group_totals = counts.groupby('CR Group')['Count'].sum().reset_index(name='Total')
+    counts = counts.merge(group_totals, on='CR Group')
+    counts['Tỷ lệ (%)'] = round(100 * counts['Count'] / counts['Total'], 2)
+
+    pivot_df = counts.pivot(index=selected_col, columns='CR Group', values='Tỷ lệ (%)').fillna(0)
+
+    pivot_df['Mean'] = pivot_df.mean(axis=1)
+    pivot_df = pivot_df.sort_values(by='Mean', ascending=False).drop(columns='Mean').head(20)
+
+    st.bar_chart(pivot_df)
