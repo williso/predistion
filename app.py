@@ -113,7 +113,6 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR"):
                         st.caption(asins[i + j])
 
     show_images_by_group(filtered_df, 'Trên trung bình', '🟢')
-    show_images_by_group(filtered_df, 'Trung bình', '🟡')
     show_images_by_group(filtered_df, 'Dưới trung bình', '🔴')
 
 # --------------------------------------------
