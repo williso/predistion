@@ -87,13 +87,12 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR"):
 
     mean_cr = filtered_df['7 Day Conversion Rate'].mean()
 
+    # ✅ Cách 2: Gom nhóm Trung bình vào Trên trung bình
     def categorize_cr(cr, mean):
-        if cr > mean:
+        if cr >= mean:
             return 'Trên trung bình'
-        elif cr < mean:
-            return 'Dưới trung bình'
         else:
-            return 'Trung bình'
+            return 'Dưới trung bình'
 
     filtered_df['CR Group'] = filtered_df['7 Day Conversion Rate'].apply(lambda x: categorize_cr(x, mean_cr))
 
