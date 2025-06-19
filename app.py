@@ -83,24 +83,11 @@ st.dataframe(styled_df, use_container_width=True, hide_index=True)
 # ------------------------------------------
 # 5. Chia ASIN theo nhóm CR và hiển thị ảnh
 # ------------------------------------------
-with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR trong tổ hợp đã chọn"):
-    st.markdown("### 🧩 Chọn một tổ hợp:")
+with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR"):
+    st.markdown("### 🧩 Phân loại toàn bộ ASIN theo CR trung bình")
 
-    # Tạo chuỗi mô tả tổ hợp
-    summary_df["Tổ hợp"] = summary_df[group_cols].astype(str).agg(" | ".join, axis=1)
-    option = st.selectbox("Chọn tổ hợp thiết kế:", summary_df["Tổ hợp"].tolist())
-
-    # Lấy dòng tương ứng
-    selected_combo_row = summary_df[summary_df["Tổ hợp"] == option].iloc[0]
-
-    # Lọc ASIN thuộc tổ hợp đó
-    condition = True
-    for col in group_cols:
-        condition &= (filtered_df[col] == selected_combo_row[col])
-    asin_df = filtered_df[condition].copy()
-
-    # Tính trung bình của tổ hợp
-    mean_cr = asin_df['7 Day Conversion Rate'].mean()
+    # Tính trung bình CR toàn bộ filtered_df
+    mean_cr = filtered_df['7 Day Conversion Rate'].mean()
 
     # Gán nhóm CR theo trung bình
     def categorize_cr(cr, mean):
@@ -111,7 +98,7 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR trong t�
         else:
             return 'Trung bình'
 
-    asin_df['CR Group'] = asin_df['7 Day Conversion Rate'].apply(lambda x: categorize_cr(x, mean_cr))
+    filtered_df['CR Group'] = filtered_df['7 Day Conversion Rate'].apply(lambda x: categorize_cr(x, mean_cr))
 
     # --------------------------
     # Hàm hiển thị hình ảnh lưới
@@ -132,6 +119,6 @@ with st.expander("📌 Xem phân loại hình ảnh ASIN theo nhóm CR trong t�
                         st.caption(asins[i + j])
 
     # Hiển thị từng nhóm
-    show_images_by_group(asin_df, 'Trên trung bình', '🟢')
-    show_images_by_group(asin_df, 'Trung bình', '🟡')
-    show_images_by_group(asin_df, 'Dưới trung bình', '🔴')
+    show_images_by_group(filtered_df, 'Trên trung bình', '🟢')
+    show_images_by_group(filtered_df, 'Trung bình', '🟡')
+    show_images_by_group(filtered_df, 'Dưới trung bình', '🔴')
